@@ -14,7 +14,7 @@ export async function GET(req: Request) {
 
     const snapshot = await db.collection('labels').where('account_number', '==', accountNumber).get();
     
-    let labels = snapshot.docs.map(doc => ({
+    let labels = snapshot.docs.map((doc: any) => ({
       id: doc.id,
       ...doc.data()
     }));
