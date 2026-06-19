@@ -247,6 +247,7 @@ export default function TransactionsPage() {
             <div className="space-y-2">
               {labels.map((label) => {
                 const isSelected = selectedFolder?.id === label.id;
+                const isDefault = label.id.startsWith("default_");
                 return (
                   <div 
                     key={label.id}
@@ -254,7 +255,7 @@ export default function TransactionsPage() {
                     onDragOver={(e) => handleDragOver(e, label.name)}
                     onDragLeave={handleDragLeave}
                     onDrop={(e) => handleDrop(e, label.name)}
-                    className={`flex items-center gap-3 p-3 rounded-xl border-2 transition-all duration-200 cursor-pointer ${
+                    className={`group flex items-center gap-3 p-3 rounded-xl border-2 transition-all duration-200 cursor-pointer ${
                       dragOverLabel === label.name 
                         ? "border-brand-500 bg-brand-500/10 scale-[1.02]" 
                         : isSelected 
@@ -264,6 +265,18 @@ export default function TransactionsPage() {
                   >
                     <div className="w-4 h-4 rounded-full flex-shrink-0" style={{ backgroundColor: label.color }}></div>
                     <span className="text-sm font-medium text-slate-200 flex-1">{label.name}</span>
+                    {!isDefault && (
+                      <button 
+                        onClick={(e) => {
+                          e.stopPropagation();
+                          handleDeleteFolder(label.id);
+                        }}
+                        className="opacity-0 group-hover:opacity-100 p-1.5 text-slate-500 hover:text-rose-400 hover:bg-rose-500/10 rounded-md transition-all"
+                        title="Xóa thư mục"
+                      >
+                        <Trash2 className="w-4 h-4" />
+                      </button>
+                    )}
                   </div>
                 );
               })}
@@ -281,14 +294,6 @@ export default function TransactionsPage() {
               </h2>
               {selectedFolder && (
                 <div className="flex items-center gap-2">
-                  {!selectedFolder.id.startsWith("default_") && (
-                    <button 
-                      onClick={() => handleDeleteFolder(selectedFolder.id)}
-                      className="text-rose-400 hover:text-rose-300 hover:bg-rose-500/10 px-3 py-1.5 rounded-lg text-sm font-medium transition-colors flex items-center gap-1.5"
-                    >
-                      <Trash2 className="w-4 h-4" /> Xoá thư mục
-                    </button>
-                  )}
                   <button 
                     onClick={() => setSelectedFolder(null)}
                     className="text-slate-400 hover:text-white hover:bg-slate-800 px-3 py-1.5 rounded-lg text-sm font-medium transition-colors flex items-center gap-1.5"
@@ -306,10 +311,10 @@ export default function TransactionsPage() {
                 {displayedTransactions.map((t) => (
                   <div 
                     key={t.id}
-                    draggable={!selectedFolder} // Only allow dragging if uncategorized
-                    onDragStart={!selectedFolder ? (e) => handleDragStart(e, t.id) : undefined}
-                    onDragEnd={!selectedFolder ? () => setDraggedTxId(null) : undefined}
-                    className={`relative group ${!selectedFolder ? 'cursor-grab active:cursor-grabbing' : ''} transition-transform ${
+                    draggable
+                    onDragStart={(e) => handleDragStart(e, t.id)}
+                    onDragEnd={() => setDraggedTxId(null)}
+                    className={`relative group cursor-grab active:cursor-grabbing transition-transform ${
                       draggedTxId === t.id ? 'opacity-50 scale-95' : 'hover:scale-[1.01]'
                     }`}
                   >
