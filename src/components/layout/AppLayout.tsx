@@ -4,7 +4,7 @@ import { useEffect, useState } from "react";
 import { useRouter, usePathname } from "next/navigation";
 import { useUserStore } from "@/store/useUserStore";
 import { motion } from "framer-motion";
-import { LayoutDashboard, LogOut, Receipt, BarChart3, User } from "lucide-react";
+import { LayoutDashboard, LogOut, Receipt, BarChart3, User, BookOpen } from "lucide-react";
 
 export default function AppLayout({ children }: { children: React.ReactNode }) {
   const { isAuthenticated, user, logout } = useUserStore();
@@ -33,6 +33,7 @@ export default function AppLayout({ children }: { children: React.ReactNode }) {
     { icon: LayoutDashboard, label: "Overview", path: "/" },
     { icon: Receipt, label: "Transactions", path: "#" },
     { icon: BarChart3, label: "Analytics", path: "#" },
+    { icon: BookOpen, label: "Hướng dẫn", path: "/guide" },
   ];
 
   return (

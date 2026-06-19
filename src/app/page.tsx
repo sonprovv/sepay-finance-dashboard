@@ -267,7 +267,7 @@ export default function DashboardPage() {
                 margin={{ top: 10, right: 10, left: 0, bottom: 0 }}
                 onClick={(e) => {
                   if (e && e.activeLabel) {
-                    setSelectedChartDate(e.activeLabel);
+                    setSelectedChartDate(String(e.activeLabel));
                   }
                 }}
               >
