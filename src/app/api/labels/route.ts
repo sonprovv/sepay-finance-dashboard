@@ -55,3 +55,47 @@ export async function POST(req: Request) {
     return NextResponse.json({ success: false, error: error.message }, { status: 500 });
   }
 }
+
+export async function DELETE(req: Request) {
+  try {
+    const { searchParams } = new URL(req.url);
+    const id = searchParams.get('id');
+    const accountNumber = searchParams.get('accountNumber');
+
+    if (!id || !accountNumber) {
+      return NextResponse.json({ success: false, message: "Missing id or accountNumber" }, { status: 400 });
+    }
+
+    const docRef = db.collection('labels').doc(id);
+    const doc = await docRef.get();
+    
+    if (!doc.exists) {
+      return NextResponse.json({ success: false, message: "Label not found" }, { status: 404 });
+    }
+
+    if (doc.data()?.account_number !== accountNumber) {
+      return NextResponse.json({ success: false, message: "Unauthorized" }, { status: 403 });
+    }
+
+    await docRef.delete();
+
+    const categoryName = doc.data()?.name;
+    if (categoryName) {
+      const txSnapshot = await db.collection('transactions')
+        .where('account_number', '==', accountNumber)
+        .where('category', '==', categoryName)
+        .get();
+      
+      const batch = db.batch();
+      txSnapshot.docs.forEach((txDoc: any) => {
+        batch.update(txDoc.ref, { category: null });
+      });
+      await batch.commit();
+    }
+
+    return NextResponse.json({ success: true, message: "Label deleted" }, { status: 200 });
+
+  } catch (error: any) {
+    return NextResponse.json({ success: false, error: error.message }, { status: 500 });
+  }
+}

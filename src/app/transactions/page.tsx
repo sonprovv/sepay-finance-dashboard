@@ -4,7 +4,7 @@ import { useEffect, useState, DragEvent } from "react";
 import axios from "axios";
 import { useUserStore } from "@/store/useUserStore";
 import { TransactionCard } from "@/components/TransactionCard";
-import { Folder, Plus, Tag, RefreshCw } from "lucide-react";
+import { Folder, Plus, Tag, RefreshCw, X, Trash2, ArrowLeft } from "lucide-react";
 
 interface Label {
   id: string;
@@ -28,8 +28,14 @@ export default function TransactionsPage() {
   const [transactions, setTransactions] = useState<any[]>([]);
   const [labels, setLabels] = useState<Label[]>(DEFAULT_LABELS);
   const [loading, setLoading] = useState(true);
-  const [syncing, setSyncing] = useState(false);
   
+  // Filters
+  const [filterMonth, setFilterMonth] = useState(new Date().getMonth() + 1);
+  const [filterYear, setFilterYear] = useState(new Date().getFullYear());
+
+  // View state
+  const [selectedFolder, setSelectedFolder] = useState<Label | null>(null);
+
   // Create label state
   const [showCreateLabel, setShowCreateLabel] = useState(false);
   const [newLabelName, setNewLabelName] = useState("");
@@ -43,7 +49,7 @@ export default function TransactionsPage() {
     if (user?.accountNumber) {
       fetchData();
     }
-  }, [user?.accountNumber]);
+  }, [user?.accountNumber, filterMonth, filterYear]);
 
   const fetchData = async () => {
     setLoading(true);
@@ -60,10 +66,15 @@ export default function TransactionsPage() {
           }
         }
         setLabels(allLabels);
+      } else {
+        setLabels([...DEFAULT_LABELS]);
       }
 
-      // Fetch transactions
-      const txRes = await axios.get(`/api/transactions?accountNumber=${user?.accountNumber}`);
+      // Fetch transactions based on filter
+      const startDate = `${filterYear}-${String(filterMonth).padStart(2, '0')}-01T00:00:00`;
+      const endDate = new Date(filterYear, filterMonth, 0).toISOString().split('T')[0] + "T23:59:59";
+
+      const txRes = await axios.get(`/api/transactions?accountNumber=${user?.accountNumber}&startDate=${startDate}&endDate=${endDate}`);
       if (txRes.data.success) {
         setTransactions(txRes.data.data);
       }
@@ -93,10 +104,41 @@ export default function TransactionsPage() {
     }
   };
 
+  const handleDeleteFolder = async (id: string) => {
+    if (id.startsWith("default_")) {
+      alert("Không thể xóa thư mục mặc định.");
+      return;
+    }
+    if (!confirm("Bạn có chắc muốn xoá thư mục này không? Các giao dịch sẽ được trả về 'Chưa phân loại'.")) return;
+    try {
+      await axios.delete(`/api/labels?id=${id}&accountNumber=${user?.accountNumber}`);
+      setSelectedFolder(null);
+      fetchData(); // reload
+    } catch (error) {
+      console.error("Lỗi xoá thư mục:", error);
+      alert("Không thể xoá thư mục.");
+    }
+  };
+
+  const handleRemoveCategory = async (txId: string) => {
+    // Optimistic update
+    setTransactions(prev => prev.map(t => 
+      t.id === txId ? { ...t, category: null } : t
+    ));
+    try {
+      await axios.patch('/api/transactions/update-category', {
+        transactionId: txId,
+        category: null
+      });
+    } catch (error) {
+      console.error("Lỗi xóa danh mục:", error);
+      fetchData(); 
+    }
+  }
+
   const handleDragStart = (e: DragEvent<HTMLDivElement>, txId: string) => {
     setDraggedTxId(txId);
     e.dataTransfer.effectAllowed = "move";
-    // Optional: Set a custom drag image or data
     e.dataTransfer.setData("text/plain", txId);
   };
 
@@ -130,21 +172,19 @@ export default function TransactionsPage() {
       });
     } catch (error) {
       console.error("Lỗi cập nhật danh mục:", error);
-      // Revert if error
       fetchData(); 
     }
     
     setDraggedTxId(null);
   };
 
-  const getLabelColor = (categoryName: string) => {
-    const label = labels.find(l => l.name === categoryName);
-    return label ? label.color : "#64748b";
-  };
+  const displayedTransactions = selectedFolder 
+    ? transactions.filter(t => t.category === selectedFolder.name)
+    : transactions.filter(t => !t.category || t.category === "Khác");
 
   return (
     <div className="space-y-8 pb-12 animate-in fade-in duration-500">
-      <div className="flex items-center justify-between">
+      <div className="flex flex-col md:flex-row md:items-center justify-between gap-4">
         <div>
           <h1 className="text-2xl font-bold text-slate-100 flex items-center gap-2">
             <Folder className="text-brand-400 w-6 h-6" />
@@ -154,14 +194,39 @@ export default function TransactionsPage() {
             Kéo thả giao dịch vào thư mục/nhãn để phân loại dễ dàng.
           </p>
         </div>
-        <button 
-          onClick={fetchData}
-          disabled={loading}
-          className="bg-slate-800 hover:bg-slate-700 text-slate-200 px-4 py-2 rounded-xl text-sm font-medium transition-colors flex items-center gap-2"
-        >
-          <RefreshCw className={`w-4 h-4 ${loading ? 'animate-spin' : ''}`} />
-          Làm mới
-        </button>
+        
+        <div className="flex flex-wrap items-center gap-3">
+          <div className="flex items-center gap-2 bg-slate-900 rounded-xl p-1 border border-slate-800">
+            <select
+              value={filterMonth}
+              onChange={(e) => setFilterMonth(Number(e.target.value))}
+              className="bg-transparent text-slate-200 text-sm px-2 py-1.5 focus:outline-none cursor-pointer"
+            >
+              {[...Array(12)].map((_, i) => (
+                <option key={i + 1} value={i + 1} className="bg-slate-900">Tháng {i + 1}</option>
+              ))}
+            </select>
+            <span className="text-slate-600">/</span>
+            <select
+              value={filterYear}
+              onChange={(e) => setFilterYear(Number(e.target.value))}
+              className="bg-transparent text-slate-200 text-sm px-2 py-1.5 focus:outline-none cursor-pointer"
+            >
+              {[...Array(5)].map((_, i) => {
+                const y = new Date().getFullYear() - i;
+                return <option key={y} value={y} className="bg-slate-900">{y}</option>;
+              })}
+            </select>
+          </div>
+          <button 
+            onClick={fetchData}
+            disabled={loading}
+            className="bg-slate-800 hover:bg-slate-700 text-slate-200 px-4 py-2.5 rounded-xl text-sm font-medium transition-colors flex items-center gap-2"
+          >
+            <RefreshCw className={`w-4 h-4 ${loading ? 'animate-spin' : ''}`} />
+            Làm mới
+          </button>
+        </div>
       </div>
 
       <div className="grid grid-cols-1 lg:grid-cols-4 gap-6">
@@ -173,28 +238,35 @@ export default function TransactionsPage() {
               <button 
                 onClick={() => setShowCreateLabel(true)}
                 className="w-8 h-8 rounded-full bg-brand-500/10 text-brand-400 flex items-center justify-center hover:bg-brand-500 hover:text-white transition-colors"
+                title="Tạo thư mục mới"
               >
                 <Plus className="w-5 h-5" />
               </button>
             </div>
 
             <div className="space-y-2">
-              {labels.map((label) => (
-                <div 
-                  key={label.id}
-                  onDragOver={(e) => handleDragOver(e, label.name)}
-                  onDragLeave={handleDragLeave}
-                  onDrop={(e) => handleDrop(e, label.name)}
-                  className={`flex items-center gap-3 p-3 rounded-xl border-2 transition-all duration-200 ${
-                    dragOverLabel === label.name 
-                      ? "border-brand-500 bg-brand-500/10 scale-[1.02]" 
-                      : "border-transparent bg-slate-800/50 hover:bg-slate-800"
-                  }`}
-                >
-                  <div className="w-4 h-4 rounded-full flex-shrink-0" style={{ backgroundColor: label.color }}></div>
-                  <span className="text-sm font-medium text-slate-300">{label.name}</span>
-                </div>
-              ))}
+              {labels.map((label) => {
+                const isSelected = selectedFolder?.id === label.id;
+                return (
+                  <div 
+                    key={label.id}
+                    onClick={() => setSelectedFolder(isSelected ? null : label)}
+                    onDragOver={(e) => handleDragOver(e, label.name)}
+                    onDragLeave={handleDragLeave}
+                    onDrop={(e) => handleDrop(e, label.name)}
+                    className={`flex items-center gap-3 p-3 rounded-xl border-2 transition-all duration-200 cursor-pointer ${
+                      dragOverLabel === label.name 
+                        ? "border-brand-500 bg-brand-500/10 scale-[1.02]" 
+                        : isSelected 
+                          ? "border-brand-400/50 bg-brand-500/20"
+                          : "border-transparent bg-slate-800/50 hover:bg-slate-800"
+                    }`}
+                  >
+                    <div className="w-4 h-4 rounded-full flex-shrink-0" style={{ backgroundColor: label.color }}></div>
+                    <span className="text-sm font-medium text-slate-200 flex-1">{label.name}</span>
+                  </div>
+                );
+              })}
             </div>
           </div>
         </div>
@@ -202,31 +274,65 @@ export default function TransactionsPage() {
         {/* Right Column: Transactions */}
         <div className="lg:col-span-3">
           <div className="glass-card rounded-2xl p-6 min-h-[600px] flex flex-col">
-            <h2 className="font-semibold text-slate-200 mb-6 flex items-center gap-2">
-              <Tag className="w-5 h-5 text-brand-400" />
-              Danh sách giao dịch
-            </h2>
+            <div className="flex items-center justify-between mb-6">
+              <h2 className="font-semibold text-slate-200 flex items-center gap-2">
+                <Tag className="w-5 h-5 text-brand-400" />
+                {selectedFolder ? `Thư mục: ${selectedFolder.name}` : "Danh sách chưa phân loại"}
+              </h2>
+              {selectedFolder && (
+                <div className="flex items-center gap-2">
+                  {!selectedFolder.id.startsWith("default_") && (
+                    <button 
+                      onClick={() => handleDeleteFolder(selectedFolder.id)}
+                      className="text-rose-400 hover:text-rose-300 hover:bg-rose-500/10 px-3 py-1.5 rounded-lg text-sm font-medium transition-colors flex items-center gap-1.5"
+                    >
+                      <Trash2 className="w-4 h-4" /> Xoá thư mục
+                    </button>
+                  )}
+                  <button 
+                    onClick={() => setSelectedFolder(null)}
+                    className="text-slate-400 hover:text-white hover:bg-slate-800 px-3 py-1.5 rounded-lg text-sm font-medium transition-colors flex items-center gap-1.5"
+                  >
+                    <ArrowLeft className="w-4 h-4" /> Quay lại
+                  </button>
+                </div>
+              )}
+            </div>
 
             {loading ? (
               <div className="flex-1 flex justify-center items-center text-slate-500">Đang tải dữ liệu...</div>
-            ) : transactions.length > 0 ? (
+            ) : displayedTransactions.length > 0 ? (
               <div className="space-y-3 custom-scrollbar overflow-y-auto max-h-[700px] pr-2">
-                {transactions.map((t) => (
+                {displayedTransactions.map((t) => (
                   <div 
                     key={t.id}
-                    draggable
-                    onDragStart={(e) => handleDragStart(e, t.id)}
-                    onDragEnd={() => setDraggedTxId(null)}
-                    className={`cursor-grab active:cursor-grabbing transition-transform ${
+                    draggable={!selectedFolder} // Only allow dragging if uncategorized
+                    onDragStart={!selectedFolder ? (e) => handleDragStart(e, t.id) : undefined}
+                    onDragEnd={!selectedFolder ? () => setDraggedTxId(null) : undefined}
+                    className={`relative group ${!selectedFolder ? 'cursor-grab active:cursor-grabbing' : ''} transition-transform ${
                       draggedTxId === t.id ? 'opacity-50 scale-95' : 'hover:scale-[1.01]'
                     }`}
                   >
                     <TransactionCard transaction={t} />
+                    
+                    {/* Remove category button (only visible when viewing a folder) */}
+                    {selectedFolder && (
+                      <button
+                        onClick={() => handleRemoveCategory(t.id)}
+                        className="absolute top-1/2 -translate-y-1/2 right-4 w-8 h-8 rounded-full bg-slate-800/80 text-slate-400 flex items-center justify-center opacity-0 group-hover:opacity-100 hover:bg-rose-500 hover:text-white transition-all shadow-lg backdrop-blur-sm"
+                        title="Xóa khỏi thư mục"
+                      >
+                        <X className="w-4 h-4" />
+                      </button>
+                    )}
                   </div>
                 ))}
               </div>
             ) : (
-              <div className="flex-1 flex justify-center items-center text-slate-500">Không có giao dịch nào</div>
+              <div className="flex-1 flex justify-center items-center text-slate-500 flex-col gap-2">
+                <Tag className="w-12 h-12 text-slate-700" />
+                <p>{selectedFolder ? "Thư mục này chưa có giao dịch nào" : "Tất cả giao dịch đã được phân loại"}</p>
+              </div>
             )}
           </div>
         </div>
