@@ -26,17 +26,31 @@ export async function GET(req: Request) {
     }));
 
     // Filter theo ngày
-    if (startDate) {
-      transactions = transactions.filter((t: any) => t.transaction_date >= startDate);
-    }
-    if (endDate) {
-      transactions = transactions.filter((t: any) => t.transaction_date <= endDate);
+    if (startDate || endDate) {
+      const startMs = startDate ? new Date(startDate).getTime() : 0;
+      const endMs = endDate ? new Date(endDate).getTime() : Infinity;
+
+      transactions = transactions.filter((t: any) => {
+        const tDate = t.transaction_date || t.created_at;
+        if (!tDate) return false;
+        
+        // Handle SePay date format 'YYYY-MM-DD HH:mm:ss' which lacks 'T'
+        const normalizedDate = tDate.includes(' ') ? tDate.replace(' ', 'T') : tDate;
+        const tMs = new Date(normalizedDate).getTime();
+        
+        return tMs >= startMs && tMs <= endMs;
+      });
     }
 
     // Sort mới nhất lên đầu
     transactions.sort((a: any, b: any) => {
-      const dateA = a.transaction_date ? new Date(a.transaction_date).getTime() : 0;
-      const dateB = b.transaction_date ? new Date(b.transaction_date).getTime() : 0;
+      const tDateA = a.transaction_date || a.created_at;
+      const tDateB = b.transaction_date || b.created_at;
+      const normalizedA = tDateA ? (tDateA.includes(' ') ? tDateA.replace(' ', 'T') : tDateA) : '';
+      const normalizedB = tDateB ? (tDateB.includes(' ') ? tDateB.replace(' ', 'T') : tDateB) : '';
+      
+      const dateA = normalizedA ? new Date(normalizedA).getTime() : 0;
+      const dateB = normalizedB ? new Date(normalizedB).getTime() : 0;
       return dateB - dateA;
     });
 
