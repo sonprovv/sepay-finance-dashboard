@@ -248,6 +248,8 @@ export default function TransactionsPage() {
               {labels.map((label) => {
                 const isSelected = selectedFolder?.id === label.id;
                 const isDefault = label.id.startsWith("default_");
+                const count = transactions.filter(t => t.category === label.name).length;
+                
                 return (
                   <div 
                     key={label.id}
@@ -265,6 +267,13 @@ export default function TransactionsPage() {
                   >
                     <div className="w-4 h-4 rounded-full flex-shrink-0" style={{ backgroundColor: label.color }}></div>
                     <span className="text-sm font-medium text-slate-200 flex-1">{label.name}</span>
+                    
+                    {count > 0 && (
+                      <span className="text-xs bg-slate-900/80 text-slate-400 px-2.5 py-1 rounded-lg font-mono">
+                        {count}
+                      </span>
+                    )}
+
                     {!isDefault && (
                       <button 
                         onClick={(e) => {
