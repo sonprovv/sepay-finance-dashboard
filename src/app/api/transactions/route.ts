@@ -1,12 +1,12 @@
 import { NextResponse } from 'next/server';
-import { db } from '@/lib/firebase-admin';
+import admin, { db } from '@/lib/firebase-admin';
 
 export async function GET(req: Request) {
   try {
     const { searchParams } = new URL(req.url);
     const accountNumber = searchParams.get('accountNumber');
 
-    let query: FirebaseFirestore.Query = db.collection('transactions');
+    let query: admin.firestore.Query = db.collection('transactions');
 
     if (accountNumber) {
       query = query.where('account_number', '==', accountNumber);
