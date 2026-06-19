@@ -57,6 +57,13 @@ export default function AppLayout({ children }: { children: React.ReactNode }) {
               return (
                 <button
                   key={idx}
+                  onClick={() => {
+                    if (item.path === "#") {
+                      alert("Tính năng này đang được phát triển. Tạm thời bạn có thể xem mọi thứ ở tab Overview nhé!");
+                    } else {
+                      router.push(item.path);
+                    }
+                  }}
                   className={`w-full flex items-center gap-3 px-4 py-3 rounded-xl transition-all duration-300 ${
                     isActive
                       ? "bg-brand-500/10 text-brand-400 font-medium"
