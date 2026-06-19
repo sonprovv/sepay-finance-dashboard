@@ -6,7 +6,7 @@ export async function GET(req: Request) {
     const { searchParams } = new URL(req.url);
     const accountNumber = searchParams.get('accountNumber');
 
-    let query: admin.firestore.Query = db.collection('transactions');
+    let query: any = db.collection('transactions');
 
     if (accountNumber) {
       query = query.where('account_number', '==', accountNumber);
