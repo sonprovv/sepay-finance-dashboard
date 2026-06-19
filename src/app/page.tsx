@@ -4,7 +4,7 @@ import { useEffect, useState } from "react";
 import axios from "axios";
 import { TransactionCard } from "@/components/TransactionCard";
 import { useUserStore } from "@/store/useUserStore";
-import { ArrowDownRight, ArrowUpRight, Wallet, Activity, Calendar, Filter } from "lucide-react";
+import { ArrowDownRight, ArrowUpRight, Wallet, Activity, Calendar, Filter, RefreshCw } from "lucide-react";
 import { AreaChart, Area, XAxis, YAxis, CartesianGrid, Tooltip, ResponsiveContainer } from "recharts";
 
 export default function DashboardPage() {
@@ -12,6 +12,8 @@ export default function DashboardPage() {
   const [stats, setStats] = useState({ thu: 0, chi: 0, balance: 0 });
   const [chartData, setChartData] = useState<any[]>([]);
   const [loading, setLoading] = useState(true);
+  const [syncing, setSyncing] = useState(false);
+  const [refreshTrigger, setRefreshTrigger] = useState(0);
   
   // Date Filters
   const [filterType, setFilterType] = useState<"year" | "month" | "custom">("year");
@@ -95,7 +97,23 @@ export default function DashboardPage() {
     };
 
     fetchData();
-  }, [user?.accountNumber, filterType, selectedYear, selectedMonth, customStartDate, customEndDate]);
+  }, [user?.accountNumber, filterType, selectedYear, selectedMonth, customStartDate, customEndDate, refreshTrigger]);
+
+  const handleSync = async () => {
+    if (!user?.accountNumber) return;
+    try {
+      setSyncing(true);
+      const res = await axios.post('/api/sepay/sync', { accountNumber: user.accountNumber });
+      alert(res.data.message);
+      if (res.data.synced > 0) {
+        setRefreshTrigger(prev => prev + 1);
+      }
+    } catch (error: any) {
+      alert(error.response?.data?.message || "Lỗi đồng bộ. Hãy chắc chắn bạn đã cấu hình SEPAY_API_TOKEN trong Vercel.");
+    } finally {
+      setSyncing(false);
+    }
+  };
 
   const formatVND = (amount: number) => {
     return new Intl.NumberFormat("vi-VN", { style: "currency", currency: "VND" }).format(amount);
@@ -261,8 +279,17 @@ export default function DashboardPage() {
         {/* Recent Transactions */}
         <div className="glass-card rounded-3xl p-6 flex flex-col">
           <div className="flex items-center justify-between mb-6">
-            <h2 className="text-xl font-bold text-slate-100">Recent Activity</h2>
-            <button className="text-sm text-brand-400 hover:text-brand-300 font-medium">View All</button>
+            <h2 className="text-xl font-bold text-slate-100">Giao dịch gần đây</h2>
+            <div className="flex items-center gap-4">
+              <button 
+                onClick={handleSync}
+                disabled={syncing}
+                className="text-sm flex items-center gap-1.5 text-slate-400 hover:text-slate-200 transition-colors disabled:opacity-50"
+              >
+                <RefreshCw className={`w-4 h-4 ${syncing ? 'animate-spin' : ''}`} />
+                {syncing ? 'Đang đồng bộ...' : 'Đồng bộ từ SePay'}
+              </button>
+            </div>
           </div>
           
           <div className="flex-1 overflow-y-auto space-y-3 pr-2 custom-scrollbar">
