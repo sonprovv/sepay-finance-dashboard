@@ -15,7 +15,7 @@ export async function GET(req: Request) {
     // Order by latest first
     const snapshot = await query.orderBy('created_at', 'desc').limit(100).get();
 
-    const transactions = snapshot.docs.map(doc => ({
+    const transactions = snapshot.docs.map((doc: any) => ({
       id: doc.id,
       ...doc.data()
     }));
