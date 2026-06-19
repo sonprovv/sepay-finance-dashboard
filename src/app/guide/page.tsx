@@ -85,41 +85,6 @@ export default function GuidePage() {
           </div>
         </div>
 
-        {/* Cấu hình phân loại */}
-        <div className="lg:col-span-2 glass-card rounded-3xl p-6 lg:p-8 space-y-6">
-          <div className="flex items-center gap-3 border-b border-slate-800 pb-4">
-            <div className="w-12 h-12 bg-blue-500/10 rounded-2xl flex items-center justify-center">
-              <Settings className="w-6 h-6 text-blue-400" />
-            </div>
-            <div>
-              <h2 className="text-xl font-bold text-slate-100">3. Cách hệ thống tự động phân loại</h2>
-              <p className="text-sm text-slate-400">Cơ chế nhận diện giao dịch tự động</p>
-            </div>
-          </div>
-          
-          <div className="text-slate-300 text-sm space-y-4">
-            <p>Hệ thống của chúng ta được lập trình để tự động phân tích "Nội dung chuyển khoản" và gán vào các danh mục phù hợp. Các từ khoá nhận diện hiện tại bao gồm:</p>
-            <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-4 mt-4">
-              <div className="bg-slate-900/50 p-4 rounded-xl border border-slate-800">
-                <p className="font-bold text-brand-400 mb-2">🍽️ Ăn uống</p>
-                <p className="text-xs text-slate-400">an uong, an trua, cafe, bun cha, pho, do an, food...</p>
-              </div>
-              <div className="bg-slate-900/50 p-4 rounded-xl border border-slate-800">
-                <p className="font-bold text-emerald-400 mb-2">💰 Lương</p>
-                <p className="text-xs text-slate-400">luong, salary, thu lao, thanh toan...</p>
-              </div>
-              <div className="bg-slate-900/50 p-4 rounded-xl border border-slate-800">
-                <p className="font-bold text-amber-400 mb-2">🛵 Đi lại</p>
-                <p className="text-xs text-slate-400">xang, di lai, grab, be, gojek...</p>
-              </div>
-              <div className="bg-slate-900/50 p-4 rounded-xl border border-slate-800">
-                <p className="font-bold text-purple-400 mb-2">🛍️ Mua sắm & Hoá đơn</p>
-                <p className="text-xs text-slate-400">shopee, dien, nuoc, wifi, internet, tiktok...</p>
-              </div>
-            </div>
-            <p className="text-slate-400 text-xs mt-4 italic">* Các giao dịch không nằm trong từ khoá trên sẽ được gom mặc định vào nhóm "Chuyển khoản".</p>
-          </div>
-        </div>
       </div>
     </div>
   );

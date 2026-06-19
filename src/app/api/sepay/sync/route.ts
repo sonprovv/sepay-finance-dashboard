@@ -53,13 +53,7 @@ export async function POST(req: Request) {
       const amount = amountIn > 0 ? amountIn : amountOut;
       const type = amountIn > 0 ? 'THU' : 'CHI';
       
-      let category = "Chuyển khoản"; 
-      const text = (t.transaction_content || "").toLowerCase();
-      if (text.match(/an uong|an trua|cafe|bun cha|pho|do an|food/)) category = "Ăn uống";
-      else if (text.match(/luong|salary|thu lao|thanh toan/)) category = "Lương";
-      else if (text.match(/xang|di lai|grab|be|gojek/)) category = "Đi lại";
-      else if (text.match(/shopee|lazada|tiktok|mua sam/)) category = "Mua sắm";
-      else if (text.match(/dien|nuoc|internet|wifi/)) category = "Hóa đơn";
+      let category = "Chuyển khoản";
 
       const newTransaction = {
         sepay_id: String(t.id),

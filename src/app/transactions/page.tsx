@@ -190,6 +190,24 @@ export default function TransactionsPage() {
     setDraggedTxId(null);
   };
 
+  const handleResetCategories = async () => {
+    if (!confirm("Bạn có chắc muốn đưa TẤT CẢ giao dịch về thư mục 'Chuyển khoản' không? (Thao tác này không thể hoàn tác)")) return;
+    setLoading(true);
+    try {
+      const res = await axios.post('/api/transactions/reset-categories', {
+        accountNumber: user?.accountNumber
+      });
+      if (res.data.success) {
+        alert(`Đã đưa ${res.data.count} giao dịch về thư mục 'Chuyển khoản' thành công!`);
+        fetchData();
+      }
+    } catch (error) {
+      console.error("Lỗi reset:", error);
+      alert("Đã xảy ra lỗi khi reset.");
+      setLoading(false);
+    }
+  };
+
   const displayedTransactions = selectedFolder 
     ? transactions.filter(t => t.category === selectedFolder.name)
     : transactions.filter(t => !t.category || t.category === "Khác");
@@ -208,6 +226,15 @@ export default function TransactionsPage() {
         </div>
         
         <div className="flex flex-wrap items-center gap-3">
+          <button
+            onClick={handleResetCategories}
+            disabled={loading}
+            className="text-xs bg-rose-500/10 hover:bg-rose-500/20 text-rose-400 px-3 py-2 rounded-xl font-medium transition-colors border border-rose-500/20"
+            title="Đưa tất cả hoá đơn về thư mục Chuyển khoản"
+          >
+            Reset phân loại
+          </button>
+          
           <div className="flex items-center gap-2 bg-slate-900 rounded-xl p-1 border border-slate-800">
             <select
               value={filterMonth}

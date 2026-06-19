@@ -29,13 +29,6 @@ export async function POST(req: Request) {
     }
 
     let category = "Chuyển khoản"; 
-    const text = (content || "").toLowerCase();
-
-    if (text.match(/an uong|an trua|cafe|bun cha|pho|do an|food/)) category = "Ăn uống";
-    else if (text.match(/luong|salary|thu lao|thanh toan/)) category = "Lương";
-    else if (text.match(/xang|di lai|grab|be|gojek/)) category = "Đi lại";
-    else if (text.match(/shopee|lazada|tiktok|mua sam/)) category = "Mua sắm";
-    else if (text.match(/dien|nuoc|internet|wifi/)) category = "Hóa đơn";
 
     const type = transferType === 'in' ? 'THU' : 'CHI';
     const safeDate = transactionDate || new Date().toISOString();
