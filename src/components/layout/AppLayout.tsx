@@ -17,16 +17,34 @@ export default function AppLayout({ children }: { children: React.ReactNode }) {
   }, []);
 
   useEffect(() => {
-    if (mounted && !isAuthenticated && pathname !== "/login") {
+    if (mounted && !isAuthenticated && pathname !== "/login" && pathname !== "/guide") {
       router.push("/login");
     }
   }, [mounted, isAuthenticated, pathname, router]);
 
   if (!mounted) return null; // Avoid hydration mismatch
-  if (!isAuthenticated && pathname !== "/login") return null;
+  if (!isAuthenticated && pathname !== "/login" && pathname !== "/guide") return null;
 
   if (pathname === "/login") {
     return <>{children}</>;
+  }
+
+  if (!isAuthenticated && pathname === "/guide") {
+    return (
+      <div className="min-h-screen bg-slate-950 p-4 md:p-10 flex flex-col items-center overflow-auto">
+        <div className="w-full max-w-4xl mb-4">
+          <button 
+            onClick={() => router.push("/login")}
+            className="text-brand-400 hover:text-brand-300 text-sm flex items-center gap-2 mb-4 transition-colors"
+          >
+            ← Quay lại đăng nhập
+          </button>
+        </div>
+        <div className="w-full max-w-4xl bg-slate-900/50 rounded-3xl border border-slate-800/50 shadow-2xl p-6">
+          {children}
+        </div>
+      </div>
+    );
   }
 
   const navItems = [
