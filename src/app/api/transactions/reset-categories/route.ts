@@ -13,7 +13,7 @@ export async function POST(req: Request) {
     const batch = db.batch();
     let count = 0;
     
-    txSnapshot.docs.forEach((doc) => {
+    txSnapshot.docs.forEach((doc: any) => {
       if (doc.data().category !== "Chuyển khoản") {
         batch.update(doc.ref, { category: "Chuyển khoản" });
         count++;
