@@ -28,6 +28,10 @@ export const db = {
   collection: (path: string) => {
     initFirebase();
     return getFirestore().collection(path);
+  },
+  batch: () => {
+    initFirebase();
+    return getFirestore().batch();
   }
 } as any;
 
