@@ -4,7 +4,7 @@ import { useEffect, useState } from "react";
 import axios from "axios";
 import { TransactionCard } from "@/components/TransactionCard";
 import { useUserStore } from "@/store/useUserStore";
-import { ArrowDownRight, ArrowUpRight, Wallet, Activity, Calendar, Filter, RefreshCw } from "lucide-react";
+import { ArrowDownRight, ArrowUpRight, Wallet, Activity, Calendar, Filter, RefreshCw, Receipt } from "lucide-react";
 import { AreaChart, Area, XAxis, YAxis, CartesianGrid, Tooltip, ResponsiveContainer } from "recharts";
 
 export default function DashboardPage() {
@@ -14,6 +14,7 @@ export default function DashboardPage() {
   const [loading, setLoading] = useState(true);
   const [syncing, setSyncing] = useState(false);
   const [refreshTrigger, setRefreshTrigger] = useState(0);
+  const [selectedChartDate, setSelectedChartDate] = useState<string | null>(null);
   
   // Date Filters
   const [filterType, setFilterType] = useState<"year" | "month" | "custom">("year");
@@ -123,6 +124,12 @@ export default function DashboardPage() {
   const formatVND = (amount: number) => {
     return new Intl.NumberFormat("vi-VN", { style: "currency", currency: "VND" }).format(amount);
   };
+
+  const selectedDayTransactions = selectedChartDate ? transactions.filter(t => {
+    const tDate = t.transaction_date || t.created_at;
+    const normalizedDate = tDate.includes(' ') ? tDate.replace(' ', 'T') : tDate;
+    return new Date(normalizedDate).toLocaleDateString('vi-VN', { day: '2-digit', month: '2-digit' }) === selectedChartDate;
+  }) : [];
 
   return (
     <div className="space-y-8 pb-12">
@@ -255,7 +262,15 @@ export default function DashboardPage() {
           </div>
           <div className="h-[300px] w-full">
             <ResponsiveContainer width="100%" height="100%">
-              <AreaChart data={chartData} margin={{ top: 10, right: 10, left: 0, bottom: 0 }}>
+              <AreaChart 
+                data={chartData} 
+                margin={{ top: 10, right: 10, left: 0, bottom: 0 }}
+                onClick={(e) => {
+                  if (e && e.activeLabel) {
+                    setSelectedChartDate(e.activeLabel);
+                  }
+                }}
+              >
                 <defs>
                   <linearGradient id="colorThu" x1="0" y1="0" x2="0" y2="1">
                     <stop offset="5%" stopColor="#10b981" stopOpacity={0.3} />
@@ -312,6 +327,38 @@ export default function DashboardPage() {
           </div>
         </div>
       </div>
+
+      {/* Modal chi tiết ngày */}
+      {selectedChartDate && (
+        <div className="fixed inset-0 z-50 flex items-center justify-center p-4 bg-slate-950/80 backdrop-blur-sm" onClick={() => setSelectedChartDate(null)}>
+          <div className="glass-card rounded-3xl w-full max-w-lg p-6 max-h-[85vh] flex flex-col relative animate-in fade-in zoom-in duration-300" onClick={(e) => e.stopPropagation()}>
+            <button 
+              onClick={() => setSelectedChartDate(null)} 
+              className="absolute top-5 right-5 w-8 h-8 flex items-center justify-center rounded-full bg-slate-800/50 hover:bg-rose-500/20 text-slate-400 hover:text-rose-400 transition-colors"
+            >
+              ✕
+            </button>
+            <h2 className="text-xl font-bold text-slate-100 mb-6 flex items-center gap-2">
+              <Calendar className="w-5 h-5 text-brand-400" />
+              Giao dịch ngày {selectedChartDate}
+            </h2>
+            <div className="flex-1 overflow-y-auto space-y-3 custom-scrollbar pr-2">
+              {selectedDayTransactions.length > 0 ? (
+                selectedDayTransactions.map((t) => (
+                  <TransactionCard key={t.id} transaction={t} />
+                ))
+              ) : (
+                <div className="text-slate-400 text-center py-10 flex flex-col items-center">
+                  <div className="w-16 h-16 bg-slate-800/50 rounded-2xl flex items-center justify-center mb-4">
+                    <Receipt className="w-8 h-8 text-slate-600" />
+                  </div>
+                  <p>Không có giao dịch nào</p>
+                </div>
+              )}
+            </div>
+          </div>
+        </div>
+      )}
     </div>
   );
 }
