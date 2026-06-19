@@ -54,8 +54,8 @@ export default function TransactionsPage() {
   const fetchData = async () => {
     setLoading(true);
     try {
-      // Fetch labels
-      const labelsRes = await axios.get(`/api/labels?accountNumber=${user?.accountNumber}`);
+      // Fetch labels with cache busting
+      const labelsRes = await axios.get(`/api/labels?accountNumber=${user?.accountNumber}&t=${Date.now()}`);
       if (labelsRes.data.success && labelsRes.data.data.length > 0) {
         // Merge with defaults
         const customLabels = labelsRes.data.data;
@@ -74,7 +74,7 @@ export default function TransactionsPage() {
       const startDate = `${filterYear}-${String(filterMonth).padStart(2, '0')}-01T00:00:00`;
       const endDate = new Date(filterYear, filterMonth, 0).toISOString().split('T')[0] + "T23:59:59";
 
-      const txRes = await axios.get(`/api/transactions?accountNumber=${user?.accountNumber}&startDate=${startDate}&endDate=${endDate}`);
+      const txRes = await axios.get(`/api/transactions?accountNumber=${user?.accountNumber}&startDate=${startDate}&endDate=${endDate}&t=${Date.now()}`);
       if (txRes.data.success) {
         setTransactions(txRes.data.data);
       }
@@ -110,13 +110,25 @@ export default function TransactionsPage() {
       return;
     }
     if (!confirm("Bạn có chắc muốn xoá thư mục này không? Các giao dịch sẽ được trả về 'Chưa phân loại'.")) return;
+    
+    // Optimistic UI update
+    setLabels(prev => prev.filter(l => l.id !== id));
+    if (selectedFolder?.id === id) {
+      setSelectedFolder(null);
+    }
+
     try {
       await axios.delete(`/api/labels?id=${id}&accountNumber=${user?.accountNumber}`);
-      setSelectedFolder(null);
-      fetchData(); // reload
-    } catch (error) {
+      fetchData(); // reload to sync transactions
+    } catch (error: any) {
+      if (error.response?.status === 404) {
+        // Already deleted
+        fetchData();
+        return;
+      }
       console.error("Lỗi xoá thư mục:", error);
       alert("Không thể xoá thư mục.");
+      fetchData(); // Revert
     }
   };
 
