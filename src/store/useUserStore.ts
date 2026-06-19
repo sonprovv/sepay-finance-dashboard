@@ -4,6 +4,7 @@ import { persist } from 'zustand/middleware';
 interface UserConfig {
   bankName: string;
   accountNumber: string;
+  sepayApiToken?: string;
 }
 
 interface UserState {

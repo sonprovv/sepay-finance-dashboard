@@ -5,15 +5,15 @@ export const dynamic = 'force-dynamic';
 
 export async function POST(req: Request) {
   try {
-    const { accountNumber } = await req.json();
+    const { accountNumber, sepayApiToken } = await req.json();
 
     if (!accountNumber) {
       return NextResponse.json({ success: false, message: "Thiếu số tài khoản" }, { status: 400 });
     }
 
-    const apiToken = process.env.SEPAY_API_TOKEN;
+    const apiToken = sepayApiToken || process.env.SEPAY_API_TOKEN;
     if (!apiToken) {
-      return NextResponse.json({ success: false, message: "Chưa cấu hình SEPAY_API_TOKEN trong biến môi trường" }, { status: 400 });
+      return NextResponse.json({ success: false, message: "Vui lòng cung cấp API Token của bạn ở trang Đăng nhập để đồng bộ" }, { status: 400 });
     }
 
     // Lấy dữ liệu từ SePay REST API

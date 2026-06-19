@@ -103,7 +103,10 @@ export default function DashboardPage() {
     if (!user?.accountNumber) return;
     try {
       setSyncing(true);
-      const res = await axios.post('/api/sepay/sync', { accountNumber: user.accountNumber });
+      const res = await axios.post('/api/sepay/sync', { 
+        accountNumber: user.accountNumber,
+        sepayApiToken: user.sepayApiToken
+      });
       alert(res.data.message);
       if (res.data.synced > 0) {
         setRefreshTrigger(prev => prev + 1);

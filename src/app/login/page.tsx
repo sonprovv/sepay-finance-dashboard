@@ -9,6 +9,7 @@ import { useUserStore } from "@/store/useUserStore";
 export default function LoginPage() {
   const [bankName, setBankName] = useState("");
   const [accountNumber, setAccountNumber] = useState("");
+  const [sepayApiToken, setSepayApiToken] = useState("");
   const router = useRouter();
   const login = useUserStore((state) => state.login);
 
@@ -17,7 +18,8 @@ export default function LoginPage() {
     if (bankName.trim() && accountNumber.trim()) {
       login({ 
         bankName: bankName.trim().toUpperCase(),
-        accountNumber: accountNumber.trim()
+        accountNumber: accountNumber.trim(),
+        sepayApiToken: sepayApiToken.trim() || undefined
       });
       router.push("/");
     }
@@ -77,6 +79,21 @@ export default function LoginPage() {
                   placeholder="e.g. 123456789"
                   className="w-full bg-slate-900/50 border border-slate-700/50 rounded-xl px-4 py-3 outline-none focus:ring-2 focus:ring-brand-500/50 focus:border-brand-500 transition-all duration-300 text-slate-100 placeholder:text-slate-600"
                   required
+                />
+              </div>
+
+              <div className="space-y-2">
+                <label htmlFor="sepayApiToken" className="block text-sm font-medium text-slate-300 flex justify-between">
+                  <span>SePay API Token</span>
+                  <span className="text-slate-500 font-normal text-xs">(Optional, for Sync feature)</span>
+                </label>
+                <input
+                  id="sepayApiToken"
+                  type="password"
+                  value={sepayApiToken}
+                  onChange={(e) => setSepayApiToken(e.target.value)}
+                  placeholder="e.g. TH0L1Z..."
+                  className="w-full bg-slate-900/50 border border-slate-700/50 rounded-xl px-4 py-3 outline-none focus:ring-2 focus:ring-brand-500/50 focus:border-brand-500 transition-all duration-300 text-slate-100 placeholder:text-slate-600"
                 />
               </div>
             </div>
