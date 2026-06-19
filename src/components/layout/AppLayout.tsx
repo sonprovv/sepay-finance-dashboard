@@ -31,8 +31,8 @@ export default function AppLayout({ children }: { children: React.ReactNode }) {
 
   const navItems = [
     { icon: LayoutDashboard, label: "Overview", path: "/" },
-    { icon: Receipt, label: "Transactions", path: "#" },
-    { icon: BarChart3, label: "Analytics", path: "#" },
+    { icon: Receipt, label: "Transactions", path: "/transactions" },
+    { icon: BarChart3, label: "Analytics", path: "/analytics" },
     { icon: BookOpen, label: "Hướng dẫn", path: "/guide" },
   ];
 
