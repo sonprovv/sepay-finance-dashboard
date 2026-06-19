@@ -72,7 +72,9 @@ export default function DashboardPage() {
         // Giả lập dữ liệu biểu đồ từ giao dịch
         // Dữ liệu thực tế có thể gọi từ GET /api/transactions/stats
         const groupedByDay = data.reduce((acc: any, t: any) => {
-          const date = new Date(t.created_at).toLocaleDateString('vi-VN', { day: '2-digit', month: '2-digit' });
+          const tDate = t.transaction_date || t.created_at;
+          const normalizedDate = tDate.includes(' ') ? tDate.replace(' ', 'T') : tDate;
+          const date = new Date(normalizedDate).toLocaleDateString('vi-VN', { day: '2-digit', month: '2-digit' });
           if (!acc[date]) acc[date] = { date, thu: 0, chi: 0 };
           if (t.type === "THU") acc[date].thu += t.amount;
           if (t.type === "CHI") acc[date].chi += t.amount;
