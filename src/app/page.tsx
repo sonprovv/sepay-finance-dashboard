@@ -4,7 +4,7 @@ import { useEffect, useState } from "react";
 import axios from "axios";
 import { TransactionCard } from "@/components/TransactionCard";
 import { useUserStore } from "@/store/useUserStore";
-import { ArrowDownRight, ArrowUpRight, Wallet, Activity } from "lucide-react";
+import { ArrowDownRight, ArrowUpRight, Wallet, Activity, Calendar, Filter } from "lucide-react";
 import { AreaChart, Area, XAxis, YAxis, CartesianGrid, Tooltip, ResponsiveContainer } from "recharts";
 
 export default function DashboardPage() {
@@ -12,15 +12,44 @@ export default function DashboardPage() {
   const [stats, setStats] = useState({ thu: 0, chi: 0, balance: 0 });
   const [chartData, setChartData] = useState<any[]>([]);
   const [loading, setLoading] = useState(true);
+  
+  // Date Filters
+  const [filterType, setFilterType] = useState<"year" | "month" | "custom">("year");
+  const [selectedYear, setSelectedYear] = useState(new Date().getFullYear());
+  const [selectedMonth, setSelectedMonth] = useState(new Date().getMonth() + 1);
+  const [customStartDate, setCustomStartDate] = useState("");
+  const [customEndDate, setCustomEndDate] = useState("");
+
   const user = useUserStore((state) => state.user);
 
   useEffect(() => {
     const fetchData = async () => {
-      if (!user?.accountNumber) return; // Wait until user config is loaded
+      if (!user?.accountNumber) return;
 
       try {
+        setLoading(true);
+        let start = "";
+        let end = "";
+
+        if (filterType === "year") {
+          start = `${selectedYear}-01-01T00:00:00.000Z`;
+          end = `${selectedYear}-12-31T23:59:59.999Z`;
+        } else if (filterType === "month") {
+          const lastDay = new Date(selectedYear, selectedMonth, 0).getDate();
+          const m = selectedMonth.toString().padStart(2, '0');
+          start = `${selectedYear}-${m}-01T00:00:00.000Z`;
+          end = `${selectedYear}-${m}-${lastDay}T23:59:59.999Z`;
+        } else if (filterType === "custom") {
+          if (customStartDate) start = `${customStartDate}T00:00:00.000Z`;
+          if (customEndDate) end = `${customEndDate}T23:59:59.999Z`;
+        }
+
         // Lấy danh sách giao dịch
-        const res = await axios.get(`/api/transactions?accountNumber=${user.accountNumber}`);
+        let url = `/api/transactions?accountNumber=${user.accountNumber}`;
+        if (start) url += `&startDate=${start}`;
+        if (end) url += `&endDate=${end}`;
+
+        const res = await axios.get(url);
         const data = res.data.data || [];
         setTransactions(data);
 
@@ -66,7 +95,7 @@ export default function DashboardPage() {
     };
 
     fetchData();
-  }, [user?.accountNumber]);
+  }, [user?.accountNumber, filterType, selectedYear, selectedMonth, customStartDate, customEndDate]);
 
   const formatVND = (amount: number) => {
     return new Intl.NumberFormat("vi-VN", { style: "currency", currency: "VND" }).format(amount);
@@ -74,11 +103,86 @@ export default function DashboardPage() {
 
   return (
     <div className="space-y-8 pb-12">
-      <div>
-        <h1 className="text-3xl font-bold text-slate-100">
-          Tài khoản {user?.bankName}
-        </h1>
-        <p className="text-slate-400 mt-1">Here is your financial overview.</p>
+      <div className="flex flex-col md:flex-row md:items-center justify-between gap-4">
+        <div>
+          <h1 className="text-3xl font-bold text-slate-100">
+            Tài khoản {user?.bankName}
+          </h1>
+          <p className="text-slate-400 mt-1">Tổng quan tài chính của bạn.</p>
+        </div>
+
+        {/* Date Filter Controls */}
+        <div className="flex flex-wrap items-center gap-3 bg-slate-800/50 p-2 rounded-2xl border border-slate-700/50">
+          <div className="flex items-center gap-2 px-2 border-r border-slate-700/50">
+            <Filter className="w-4 h-4 text-slate-400" />
+            <select
+              value={filterType}
+              onChange={(e) => setFilterType(e.target.value as any)}
+              className="bg-transparent text-slate-200 text-sm focus:outline-none cursor-pointer"
+            >
+              <option value="year">Theo năm</option>
+              <option value="month">Theo tháng</option>
+              <option value="custom">Tùy chỉnh</option>
+            </select>
+          </div>
+
+          {filterType === "year" && (
+            <select
+              value={selectedYear}
+              onChange={(e) => setSelectedYear(Number(e.target.value))}
+              className="bg-slate-900 text-slate-200 text-sm px-3 py-1.5 rounded-xl border border-slate-700 focus:outline-none focus:border-brand-500 transition-colors"
+            >
+              {[...Array(5)].map((_, i) => {
+                const y = new Date().getFullYear() - i;
+                return <option key={y} value={y}>Năm {y}</option>;
+              })}
+            </select>
+          )}
+
+          {filterType === "month" && (
+            <div className="flex items-center gap-2">
+              <select
+                value={selectedMonth}
+                onChange={(e) => setSelectedMonth(Number(e.target.value))}
+                className="bg-slate-900 text-slate-200 text-sm px-3 py-1.5 rounded-xl border border-slate-700 focus:outline-none focus:border-brand-500 transition-colors"
+              >
+                {[...Array(12)].map((_, i) => (
+                  <option key={i + 1} value={i + 1}>Tháng {i + 1}</option>
+                ))}
+              </select>
+              <select
+                value={selectedYear}
+                onChange={(e) => setSelectedYear(Number(e.target.value))}
+                className="bg-slate-900 text-slate-200 text-sm px-3 py-1.5 rounded-xl border border-slate-700 focus:outline-none focus:border-brand-500 transition-colors"
+              >
+                {[...Array(5)].map((_, i) => {
+                  const y = new Date().getFullYear() - i;
+                  return <option key={y} value={y}>{y}</option>;
+                })}
+              </select>
+            </div>
+          )}
+
+          {filterType === "custom" && (
+            <div className="flex items-center gap-2">
+              <input
+                type="date"
+                value={customStartDate}
+                onChange={(e) => setCustomStartDate(e.target.value)}
+                style={{ colorScheme: 'dark' }}
+                className="bg-slate-900 text-slate-200 text-sm px-3 py-1.5 rounded-xl border border-slate-700 focus:outline-none focus:border-brand-500 transition-colors"
+              />
+              <span className="text-slate-500">-</span>
+              <input
+                type="date"
+                value={customEndDate}
+                onChange={(e) => setCustomEndDate(e.target.value)}
+                style={{ colorScheme: 'dark' }}
+                className="bg-slate-900 text-slate-200 text-sm px-3 py-1.5 rounded-xl border border-slate-700 focus:outline-none focus:border-brand-500 transition-colors"
+              />
+            </div>
+          )}
+        </div>
       </div>
 
       {/* Stats Cards */}
