@@ -107,7 +107,13 @@ export default function LoginPage() {
             </button>
           </form>
           
-          <div className="mt-6 text-center">
+          <div className="mt-6 text-center space-y-4">
+            <button
+              onClick={() => router.push('/guide')}
+              className="text-sm text-brand-400 hover:text-brand-300 transition-colors underline underline-offset-4"
+            >
+              Chưa biết cách lấy API Key? Xem hướng dẫn tại đây
+            </button>
             <p className="text-xs text-slate-500">
               Data is stored securely on your local device.
             </p>
